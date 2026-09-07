@@ -63,7 +63,7 @@ export function applyPreferencesPatch(
         romanizationPolicy: "ascii-hepburn-v1",
       },
     },
-    renderer: "replace",
+    renderer: patch.renderer ?? current.renderer,
     sites: Object.fromEntries(siteEntries),
     onboarding: {
       sitePermissionExplained:

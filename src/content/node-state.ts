@@ -10,8 +10,8 @@ export interface NodeState {
   rendered: string | null;
   revision: number;
   sessionEpoch: number;
-  rendererId: "replace-v1";
-  optionsKey: "ja:ascii-hepburn-v1";
+  rendererId: "replace-v1" | "annotation-v1";
+  optionsKey: string;
   status: NodeProcessingStatus;
   boundaryPrefix: string;
 }

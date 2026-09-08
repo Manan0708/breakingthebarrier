@@ -84,6 +84,10 @@ if (contentGlobal.__BTB_CONTENT_LISTENER_V1__ !== true) {
         return false;
       }
       contentGlobal.__BTB_REMEMBERED_PAGE_V1__?.stop();
+      const status = controller.status();
+      if (status.state === "active" || status.state === "degraded") {
+        controller.stop();
+      }
       void controller.start().then((summary) => {
         sendResponse(
           createContentCommandResponse(request.value.requestId, summary),
@@ -97,14 +101,10 @@ if (contentGlobal.__BTB_CONTENT_LISTENER_V1__ !== true) {
 if (typeof chrome !== "undefined" && "storage" in chrome) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "local" && changes.preferences) {
-      const oldPrefs = changes.preferences.oldValue as { renderer?: string } | undefined;
-      const newPrefs = changes.preferences.newValue as { renderer?: string } | undefined;
-      if (oldPrefs?.renderer !== newPrefs?.renderer) {
-        const summary = controller.status();
-        if (summary.state === "active" || summary.state === "degraded") {
-          controller.stop();
-          void controller.start();
-        }
+      const summary = controller.status();
+      if (summary.state === "active" || summary.state === "degraded") {
+        controller.stop();
+        void controller.start();
       }
     }
   });

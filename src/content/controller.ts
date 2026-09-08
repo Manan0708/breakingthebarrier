@@ -13,12 +13,14 @@ import {
 import { annotationRenderer } from "../renderers/annotation";
 import type { Renderer } from "../renderers/contracts";
 
+import { PreferenceStore } from "../storage/preferences";
+
 async function resolveActiveRenderer(): Promise<Renderer> {
   try {
     if (typeof chrome !== "undefined" && "storage" in chrome) {
-      const stored = await chrome.storage.local.get("preferences");
-      const prefs = stored.preferences as { renderer?: string } | undefined;
-      if (prefs?.renderer === "annotation") {
+      const store = new PreferenceStore(chrome.storage.local);
+      const prefs = await store.get();
+      if (prefs.renderer === "annotation") {
         return annotationRenderer;
       }
     }

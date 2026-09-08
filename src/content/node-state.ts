@@ -14,6 +14,7 @@ export interface NodeState {
   optionsKey: string;
   status: NodeProcessingStatus;
   boundaryPrefix: string;
+  container?: HTMLElement;
 }
 
 export class NodeStateRegistry {
@@ -97,7 +98,11 @@ export class NodeStateRegistry {
         continue;
       }
       state.status = "restoring";
-      if (state.rendered !== null && node.data === state.rendered) {
+      if (state.container !== undefined && state.container.parentNode !== null) {
+        state.container.parentNode.replaceChild(node, state.container);
+        node.data = state.source;
+        restored += 1;
+      } else if (state.rendered !== null && node.data === state.rendered) {
         const rubyParent = node.parentElement;
         if (
           rubyParent?.tagName.toLowerCase() === "ruby" &&

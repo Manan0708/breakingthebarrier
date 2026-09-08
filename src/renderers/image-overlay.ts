@@ -15,7 +15,7 @@ function ensureImageOverlayStyle(doc: Document): void {
       box-sizing: border-box !important;
       margin: 4px 0 !important;
       padding: 4px 8px !important;
-      border: 1px solid rgba(0, 229, 255, 0.4) !important;
+      border: 1px solid rgba(226, 232, 240, 0.3) !important;
       border-radius: 6px !important;
       background: rgba(15, 23, 42, 0.88) !important;
       color: #ffffff !important;
@@ -33,7 +33,7 @@ function ensureImageOverlayStyle(doc: Document): void {
     div.${IMAGE_OVERLAY_CLASS} span.btb-img-rt {
       font-size: 12px !important;
       font-weight: 600 !important;
-      color: #00e5ff !important;
+      color: #e2e8f0 !important;
       letter-spacing: 0.01em !important;
     }
   `;

@@ -5,7 +5,7 @@ import type { NodeState } from "../../src/content/node-state";
 import type { TransliterationResult } from "../../src/engines/contracts";
 
 describe("AnnotationRenderer", () => {
-  it("wraps transliterated tokens in isolated <ruby> and <rt> elements", () => {
+  it("formats original and transliterated text together in Dual Mode", () => {
     const dom = new JSDOM("<!DOCTYPE html><html><body><p id='target'>勉強</p></body></html>");
     const doc = dom.window.document;
     const p = doc.querySelector("#target");
@@ -47,15 +47,9 @@ describe("AnnotationRenderer", () => {
     const success = annotationRenderer.apply(targetText, result, state);
     expect(success).toBe(true);
     expect(state.status).toBe("rendered");
-
-    const ruby = p?.querySelector("ruby");
-    expect(ruby).not.toBeNull();
-    expect(ruby?.classList.contains("btb-ruby-token")).toBe(true);
-    expect(ruby?.textContent).toContain("勉強");
-
-    const rt = ruby?.querySelector("rt");
-    expect(rt).not.toBeNull();
-    expect(rt?.textContent).toBe("benkyou");
+    expect(state.rendered).toBe("勉強 (benkyou)");
+    expect(targetText.data).toBe("勉強 (benkyou)");
   });
 });
+
 

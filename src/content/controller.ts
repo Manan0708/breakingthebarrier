@@ -10,7 +10,23 @@ import {
   collectInlineBoundaryNodes,
   replaceRenderer,
 } from "../renderers/replace";
+import { annotationRenderer } from "../renderers/annotation";
 import type { Renderer } from "../renderers/contracts";
+
+async function resolveActiveRenderer(): Promise<Renderer> {
+  try {
+    if (typeof chrome !== "undefined" && "storage" in chrome) {
+      const stored = await chrome.storage.local.get("preferences");
+      const prefs = stored.preferences as { renderer?: string } | undefined;
+      if (prefs?.renderer === "annotation") {
+        return annotationRenderer;
+      }
+    }
+  } catch {
+    // Fallback to replaceRenderer if storage unavailable
+  }
+  return replaceRenderer;
+}
 import { LocalFrameEngineClient } from "./engine-client";
 import type { FrameEngineClient } from "./engine-client";
 import { NodeStateRegistry } from "./node-state";
@@ -49,7 +65,7 @@ function walkTextNodes(root: Node, visit: (node: Text) => void): void {
 export class FrameController {
   readonly #document: Document;
   readonly #engine: FrameEngineClient;
-  readonly #renderer: Renderer;
+  #renderer: Renderer;
   readonly #registry = new NodeStateRegistry();
   readonly #scanner: Scanner;
   readonly #scheduler: SliceScheduler;
@@ -121,6 +137,7 @@ export class FrameController {
 
   async #runStart(): Promise<FrameSessionSummary> {
     const epoch = ++this.#sessionEpoch;
+    this.#renderer = await resolveActiveRenderer();
     this.#state = "inspecting";
     this.#reason = null;
     this.#eligibleNodes = 0;

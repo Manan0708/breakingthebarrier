@@ -98,6 +98,17 @@ export class NodeStateRegistry {
       }
       state.status = "restoring";
       if (state.rendered !== null && node.data === state.rendered) {
+        const rubyParent = node.parentElement;
+        if (
+          rubyParent?.tagName.toLowerCase() === "ruby" &&
+          rubyParent.classList.contains("btb-ruby-token")
+        ) {
+          const grandParent = rubyParent.parentNode;
+          if (grandParent !== null) {
+            grandParent.insertBefore(node, rubyParent);
+            grandParent.removeChild(rubyParent);
+          }
+        }
         node.data = state.source;
         restored += 1;
       }

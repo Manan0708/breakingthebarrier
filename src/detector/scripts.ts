@@ -1,6 +1,6 @@
 const KANA_PATTERN = /[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f]/u;
 const HAN_PATTERN = /\p{Script=Han}/u;
-const NON_LATIN_PATTERN = /[^\u0020-\u007E\u00A0-\u024F]/u;
+const NON_LATIN_PATTERN = /[^\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]/u;
 
 export interface ScriptEvidence {
   readonly hasKana: boolean;

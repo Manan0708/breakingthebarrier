@@ -1,10 +1,21 @@
-import anyAscii from "any-ascii";
+import anyAsciiModule from "any-ascii";
 import type {
   SourceAlignedSegment,
   TransliterationEngine,
   TransliterationRequest,
   TransliterationResult,
 } from "../contracts";
+
+function toAscii(input: string): string {
+  const fn =
+    typeof anyAsciiModule === "function"
+      ? anyAsciiModule
+      : (anyAsciiModule as unknown as { default?: (s: string) => string }).default;
+  if (typeof fn === "function") {
+    return fn(input);
+  }
+  return input;
+}
 
 export class AnyAsciiAdapter implements TransliterationEngine {
   readonly language = "universal";
@@ -43,7 +54,7 @@ export class AnyAsciiAdapter implements TransliterationEngine {
       }
 
       const wordSource = match[0];
-      const wordRomanized = anyAscii(wordSource);
+      const wordRomanized = toAscii(wordSource);
 
       segments.push({
         start: matchStart,

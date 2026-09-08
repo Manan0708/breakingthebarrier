@@ -32,6 +32,9 @@ import type { FrameEngineClient } from "./engine-client";
 import { NodeStateRegistry } from "./node-state";
 import { isEligibleTextNode, collectEligibleTextNodes } from "./scanner";
 import type { ScanRoot, ScanResult } from "./scanner";
+import { collectEligibleImageElements } from "./image-scanner";
+import { applyImageTransliteration, restoreImageElement } from "../renderers/image-overlay";
+import type { ImageOverlayState } from "../renderers/image-overlay";
 import { browserSliceScheduler } from "./scheduler";
 import type { SliceScheduler } from "./scheduler";
 
@@ -82,6 +85,7 @@ export class FrameController {
   #pendingRemovedRoots = new Set<Node>();
   #drainScheduled = false;
   #drainRunning = false;
+  #imageStates: ImageOverlayState[] = [];
 
   constructor(
     document: Document,
@@ -126,6 +130,8 @@ export class FrameController {
     this.#pendingRoots.clear();
     this.#pendingRemovedRoots.clear();
     this.#registry.restoreOwned();
+    this.#imageStates.forEach(restoreImageElement);
+    this.#imageStates = [];
     this.#engine.clear();
     this.#state = "original";
     this.#reason = null;
@@ -146,11 +152,16 @@ export class FrameController {
     this.#installObserver(epoch);
 
     const scan = await this.#scanner(this.#document);
+    const images = collectEligibleImageElements(this.#document);
+    this.#imageStates.forEach(restoreImageElement);
+    this.#imageStates = [];
+
     if (epoch !== this.#sessionEpoch) {
       return this.status();
     }
-    this.#eligibleNodes = scan.nodes.length;
-    if (scan.nodes.length === 0) {
+    const totalEligible = scan.nodes.length + images.length;
+    this.#eligibleNodes = totalEligible;
+    if (totalEligible === 0) {
       this.#state = "original";
       this.#reason = "no-supported-text";
       return this.status();
@@ -177,6 +188,29 @@ export class FrameController {
     this.#state = "active";
     await this.#applyResults(snapshots, results, epoch, true);
     this.#registry.clearUnrendered(scan.nodes);
+
+    if (images.length > 0 && epoch === this.#sessionEpoch) {
+      const imageSources = images.map((img) => img.sourceText);
+      try {
+        const imageResults = await this.#engine.transliterate(imageSources);
+        const mode = this.#renderer.id === "annotation-v1" ? "annotation" : "replace";
+        for (const target of images) {
+          const res = imageResults.get(target.sourceText);
+          if (res !== undefined && res !== null) {
+            const imgState = applyImageTransliteration(
+              target.element,
+              target.sourceText,
+              res.rendered,
+              mode,
+            );
+            this.#imageStates.push(imgState);
+            this.#processedNodes += 1;
+          }
+        }
+      } catch {
+        this.#failedNodes += images.length;
+      }
+    }
     if (epoch !== this.#sessionEpoch) {
       return this.status();
     }

@@ -11,23 +11,19 @@ function ensureAnnotationStyle(doc: Document): void {
   const style = doc.createElement("style");
   style.id = ANNOTATION_STYLE_ID;
   style.textContent = `
-    span.btb-ruby-container {
-      display: inline !important;
-      line-height: normal !important;
-    }
     ruby.btb-ruby-token {
       display: inline-flex !important;
       flex-direction: column-reverse !important;
       align-items: center !important;
       text-align: center !important;
       vertical-align: baseline !important;
-      margin: 0 1px !important;
+      margin: 0 2px !important;
       font-style: normal !important;
     }
     rt.btb-ruby-rt {
       display: block !important;
-      font-size: 0.68em !important;
-      line-height: 1.15 !important;
+      font-size: 0.7em !important;
+      line-height: 1.2 !important;
       font-weight: 600 !important;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       color: #00e5ff !important;
@@ -55,51 +51,35 @@ export const annotationRenderer: Renderer = {
 
     ensureAnnotationStyle(doc);
 
-    const hasTransliteratedReading = result.segments.some(
-      (seg) => {
-        const reading = seg.romanized ?? seg.reading;
-        return (
-          reading !== null &&
-          reading.trim().length > 0 &&
-          reading !== seg.source
-        );
-      },
-    );
-
-    if (!hasTransliteratedReading) {
-      return false;
-    }
-
-    const container = doc.createElement("span");
-    container.className = "btb-ruby-container";
-
-    for (const seg of result.segments) {
-      const sourceText = seg.source;
-      const reading = seg.romanized ?? seg.reading;
-      const isDifferent =
-        reading !== null &&
-        reading.trim().length > 0 &&
-        reading !== sourceText;
-
-      if (isDifferent) {
-        const rubyElement = doc.createElement("ruby");
-        rubyElement.className = "btb-ruby-token";
-        rubyElement.textContent = sourceText;
-
-        const rtElement = doc.createElement("rt");
-        rtElement.className = "btb-ruby-rt";
-        rtElement.textContent = reading;
-        rubyElement.appendChild(rtElement);
-
-        container.appendChild(rubyElement);
-      } else {
-        container.appendChild(doc.createTextNode(sourceText));
+    // If target is already inside a ruby token, update rt text content
+    if (
+      parent instanceof Element &&
+      parent.tagName.toLowerCase() === "ruby" &&
+      parent.classList.contains("btb-ruby-token")
+    ) {
+      const rt = parent.querySelector("rt.btb-ruby-rt");
+      if (rt !== null) {
+        rt.textContent = result.rendered;
       }
+      state.rendered = state.source;
+      state.status = "rendered";
+      return true;
     }
 
-    parent.replaceChild(container, target);
+    // Create ruby wrapper container
+    const rubyElement = doc.createElement("ruby");
+    rubyElement.className = "btb-ruby-token";
 
-    state.container = container;
+    // Insert ruby element before target, then append target inside ruby
+    parent.insertBefore(rubyElement, target);
+    rubyElement.appendChild(target);
+
+    // Append <rt> annotation element inside ruby containing transliterated text
+    const rtElement = doc.createElement("rt");
+    rtElement.className = "btb-ruby-rt";
+    rtElement.textContent = result.rendered;
+    rubyElement.appendChild(rtElement);
+
     state.rendered = state.source;
     state.rendererId = "annotation-v1";
     state.status = "rendered";

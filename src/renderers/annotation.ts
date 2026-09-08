@@ -24,8 +24,8 @@ function ensureRubyStyle(doc: Document): void {
       line-height: 1.1 !important;
       font-weight: 700 !important;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      color: #00e5ff !important;
-      text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+      color: #e2e8f0 !important;
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.8) !important;
       letter-spacing: 0.02em !important;
       user-select: none !important;
       pointer-events: none !important;
@@ -69,23 +69,61 @@ export const annotationRenderer: Renderer = {
     }
 
     try {
-      const rubyElement = doc.createElement("ruby");
-      rubyElement.className = "btb-ruby-token";
-      rubyElement.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
+      const container = doc.createElement("span");
+      container.className = "btb-ruby-container";
+      container.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
 
-      parent.insertBefore(rubyElement, target);
-      rubyElement.appendChild(target);
+      if (result.segments && result.segments.length > 0) {
+        let lastIndex = 0;
+        for (const seg of result.segments) {
+          if (seg.start > lastIndex) {
+            const gap = state.source.slice(lastIndex, seg.start);
+            container.appendChild(doc.createTextNode(gap));
+          }
+          const reading = seg.romanized ?? seg.reading;
+          const segText = seg.source;
+          if (reading && reading !== segText && reading.trim().length > 0) {
+            const ruby = doc.createElement("ruby");
+            ruby.className = "btb-ruby-token";
+            ruby.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
+            ruby.appendChild(doc.createTextNode(segText));
 
-      const rtElement = doc.createElement("rt");
-      rtElement.className = "btb-ruby-rt";
-      rtElement.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
-      rtElement.textContent = rendered;
-      rubyElement.appendChild(rtElement);
+            const rt = doc.createElement("rt");
+            rt.className = "btb-ruby-rt";
+            rt.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
+            rt.textContent = reading;
+
+            ruby.appendChild(rt);
+            container.appendChild(ruby);
+          } else {
+            container.appendChild(doc.createTextNode(segText));
+          }
+          lastIndex = seg.end;
+        }
+        if (lastIndex < state.source.length) {
+          container.appendChild(doc.createTextNode(state.source.slice(lastIndex)));
+        }
+      } else {
+        const ruby = doc.createElement("ruby");
+        ruby.className = "btb-ruby-token";
+        ruby.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
+        ruby.appendChild(doc.createTextNode(state.source));
+
+        const rt = doc.createElement("rt");
+        rt.className = "btb-ruby-rt";
+        rt.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
+        rt.textContent = rendered;
+
+        ruby.appendChild(rt);
+        container.appendChild(ruby);
+      }
+
+      parent.replaceChild(container, target);
 
       state.rendered = state.source;
       state.rendererId = "annotation-v1";
       state.status = "rendered";
-      state.container = rubyElement;
+      state.container = container;
 
       return true;
     } catch {

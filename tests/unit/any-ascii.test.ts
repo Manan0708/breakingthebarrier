@@ -47,10 +47,36 @@ describe("AnyAsciiAdapter universal transliteration", () => {
     expect(results[0]?.rendered).toBe("nmste");
   });
 
-  it("transliterates Greek text", async () => {
+  it("transliterates Punjabi (Gurmukhi) text", async () => {
     const results = await adapter.transliterate([
       {
         itemId: "4",
+        source: "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ",
+        language: "universal",
+        romanizationPolicy: "universal-ascii-v1",
+      },
+    ]);
+
+    expect(results[0]?.rendered).toBe("sti sri akal");
+  });
+
+  it("transliterates Urdu (Arabic) text", async () => {
+    const results = await adapter.transliterate([
+      {
+        itemId: "5",
+        source: "سلام",
+        language: "universal",
+        romanizationPolicy: "universal-ascii-v1",
+      },
+    ]);
+
+    expect(results[0]?.rendered).toBe("slm");
+  });
+
+  it("transliterates Greek text", async () => {
+    const results = await adapter.transliterate([
+      {
+        itemId: "6",
         source: "Ελλάδα",
         language: "universal",
         romanizationPolicy: "universal-ascii-v1",

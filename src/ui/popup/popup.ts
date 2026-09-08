@@ -273,7 +273,11 @@ preferenceStore.get().then((prefs) => {
 
 displayMode.addEventListener("change", () => {
   const selectedMode = displayMode.value === "annotation" ? "annotation" : "replace";
-  void preferenceStore.patch({ renderer: selectedMode });
+  void preferenceStore.patch({ renderer: selectedMode }).then(() => {
+    if (currentState === "active") {
+      void sendCommand("stop").then(() => sendCommand("start"));
+    }
+  });
 });
 
 void sendCommand("status").catch(() => {

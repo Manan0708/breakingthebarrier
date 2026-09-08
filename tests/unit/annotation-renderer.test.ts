@@ -58,3 +58,4 @@ describe("AnnotationRenderer", () => {
     expect(rt?.textContent).toBe("benkyou");
   });
 });
+

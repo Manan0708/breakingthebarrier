@@ -115,8 +115,14 @@ if (contentGlobal.__BTB_REMEMBERED_BOOTSTRAP_V1__ !== true) {
   contentGlobal.__BTB_REMEMBERED_PAGE_V1__ = new RememberedPageCoordinator({
     send: sendRememberedCommand,
     createDetection: () => new JapaneseDetectionController(document),
-    showPrompt: (actions) =>
-      showJapaneseDetectionPrompt(document, actions),
+    showPrompt: (actions) => {
+      const summary = controller.status();
+      if (summary.state !== "original") {
+        return { dismiss: () => undefined };
+      }
+      return showJapaneseDetectionPrompt(document, actions);
+    },
   });
   void contentGlobal.__BTB_REMEMBERED_PAGE_V1__.start().catch(() => undefined);
 }
+

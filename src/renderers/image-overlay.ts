@@ -1,6 +1,6 @@
 import { CONTENT_IGNORE_ATTRIBUTE } from "../shared/config";
 
-const IMAGE_OVERLAY_CLASS = "btb-image-overlay-banner";
+const IMAGE_OVERLAY_CLASS = "btb-image-overlay-badge";
 const IMAGE_OVERLAY_STYLE_ID = "btb-image-overlay-style";
 
 function ensureImageOverlayStyle(doc: Document): void {
@@ -11,32 +11,30 @@ function ensureImageOverlayStyle(doc: Document): void {
   style.id = IMAGE_OVERLAY_STYLE_ID;
   style.textContent = `
     div.${IMAGE_OVERLAY_CLASS} {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
+      display: inline-block !important;
       box-sizing: border-box !important;
       margin: 4px 0 !important;
-      padding: 6px 12px !important;
-      border: 1px solid #00e5ff !important;
+      padding: 4px 8px !important;
+      border: 1px solid rgba(0, 229, 255, 0.4) !important;
       border-radius: 6px !important;
-      background: rgba(16, 24, 40, 0.88) !important;
+      background: rgba(15, 23, 42, 0.88) !important;
       color: #ffffff !important;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      font-size: 13px !important;
-      line-height: 1.4 !important;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+      font-size: 12px !important;
+      line-height: 1.35 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
       backdrop-filter: blur(4px) !important;
+      vertical-align: middle !important;
     }
     div.${IMAGE_OVERLAY_CLASS} span.btb-img-orig {
-      font-size: 12px !important;
+      font-size: 11px !important;
       color: #94a3b8 !important;
     }
     div.${IMAGE_OVERLAY_CLASS} span.btb-img-rt {
-      font-size: 13px !important;
-      font-weight: 700 !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
       color: #00e5ff !important;
-      letter-spacing: 0.02em !important;
+      letter-spacing: 0.01em !important;
     }
   `;
   doc.head.appendChild(style);
@@ -64,27 +62,32 @@ export function applyImageTransliteration(
     originalTitle: img.getAttribute("title"),
   };
 
-  if (mode === "replace") {
-    img.setAttribute("alt", renderedText);
-    img.setAttribute("title", renderedText);
+  if (state.originalAlt !== null) {
+    const newAlt = mode === "annotation" ? `${state.originalAlt} (${renderedText})` : renderedText;
+    img.setAttribute("alt", newAlt);
   }
 
-  // Create overlay banner positioned after image element
+  if (state.originalTitle !== null) {
+    const newTitle = mode === "annotation" ? `${state.originalTitle} (${renderedText})` : renderedText;
+    img.setAttribute("title", newTitle);
+  }
+
+  // Create visible overlay badge attached next to/below image
   const overlay = doc.createElement("div");
   overlay.className = IMAGE_OVERLAY_CLASS;
   overlay.setAttribute(CONTENT_IGNORE_ATTRIBUTE, "");
 
-  if (mode === "annotation") {
-    const origSpan = doc.createElement("span");
-    origSpan.className = "btb-img-orig";
-    origSpan.textContent = `Original: ${sourceText}`;
-    overlay.appendChild(origSpan);
-  }
-
   const rtSpan = doc.createElement("span");
   rtSpan.className = "btb-img-rt";
-  rtSpan.textContent = `Transliteration: ${renderedText}`;
+  rtSpan.textContent = renderedText;
   overlay.appendChild(rtSpan);
+
+  if (mode === "annotation" && sourceText !== renderedText) {
+    const origSpan = doc.createElement("span");
+    origSpan.className = "btb-img-orig";
+    origSpan.textContent = ` (${sourceText})`;
+    overlay.appendChild(origSpan);
+  }
 
   const parent = img.parentNode;
   if (parent !== null) {
@@ -102,15 +105,11 @@ export function applyImageTransliteration(
 export function restoreImageElement(state: ImageOverlayState): void {
   if (state.originalAlt !== null) {
     state.element.setAttribute("alt", state.originalAlt);
-  } else {
-    state.element.removeAttribute("alt");
   }
-
   if (state.originalTitle !== null) {
     state.element.setAttribute("title", state.originalTitle);
-  } else {
-    state.element.removeAttribute("title");
   }
 
   state.overlayElement?.remove();
 }
+

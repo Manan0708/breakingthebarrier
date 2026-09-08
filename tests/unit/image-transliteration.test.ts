@@ -6,7 +6,7 @@ import {
   restoreImageElement,
 } from "../../src/renderers/image-overlay";
 
-describe("Image text transliteration & overlays", () => {
+describe("Image text transliteration", () => {
   it("collects images with foreign script alt/title attributes", () => {
     const dom = new JSDOM(`
       <!DOCTYPE html>
@@ -28,7 +28,7 @@ describe("Image text transliteration & overlays", () => {
     expect(targets[1]?.attributeType).toBe("title");
   });
 
-  it("applies and restores image overlay elements cleanly", () => {
+  it("applies and restores image overlay badges and attributes cleanly", () => {
     const dom = new JSDOM(`
       <!DOCTYPE html>
       <html>
@@ -53,12 +53,15 @@ describe("Image text transliteration & overlays", () => {
     );
 
     expect(state.overlayElement).toBeDefined();
-    expect(doc.querySelector(".btb-image-overlay-banner")).not.toBeNull();
-    expect(doc.querySelector(".btb-img-rt")?.textContent).toContain("sti sri akal");
+    expect(doc.querySelector(".btb-image-overlay-badge")).not.toBeNull();
+    expect(doc.querySelector(".btb-img-rt")?.textContent).toBe("sti sri akal");
+    expect(img.getAttribute("alt")).toBe("ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ (sti sri akal)");
+    expect(img.getAttribute("title")).toBe("Original Title (sti sri akal)");
 
     restoreImageElement(state);
-    expect(doc.querySelector(".btb-image-overlay-banner")).toBeNull();
+    expect(doc.querySelector(".btb-image-overlay-badge")).toBeNull();
     expect(img.getAttribute("alt")).toBe("ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ");
     expect(img.getAttribute("title")).toBe("Original Title");
   });
 });
+
